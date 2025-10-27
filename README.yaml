@@ -5,21 +5,39 @@ github_repo: "cloudposse-terraform-components/template"
 
 # Short description of this project
 description: |-
-  Description of this component 55
+  Terraform module to delegate multiple AWS service principals to member accounts in an AWS Organization.
+  Takes a single map input of account identifiers → list of service principals, resolves account names to IDs,
+  and creates one aws_organizations_delegated_administrator per unique pair.
 
 usage: |-
-  **Stack Level**: Regional or Global
+  **Stack Level**: Global at the Organization level.
 
   Here's an example snippet for how to use this component.
 
   ```yaml
   components:
     terraform:
-      foo:
+      cloudposse/aws-delegated-administrator:
         vars:
           enabled: true
+          delegated_administrators:
+            core-audit:
+              - cloudtrail.amazonaws.com
+              - config.amazonaws.com
+              - config-multiaccountsetup.amazonaws.com
+            core-security:
+              - iam.amazonaws.com
+              - account.amazonaws.com
+              - guardduty.amazonaws.com
+              - securityhub.amazonaws.com
+              - securityhub-multiaccountsetup.amazonaws.com
+              - securitylake.amazonaws.com
+            infra-backup:
+              - backup.amazonaws.com
+            infra-monitor:
+              - observabilityadmin.amazonaws.com
   ```
-
+  Apply this configuration to the Organization root account, i.e., `core-gbl-root`.
 
 
 

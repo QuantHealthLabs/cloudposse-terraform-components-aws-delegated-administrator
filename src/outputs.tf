@@ -1,4 +1,4 @@
 output "delegations" {
   value       = local.delegations
-  description = "A list of delegate"
+  description = "A list of delegations"
 }

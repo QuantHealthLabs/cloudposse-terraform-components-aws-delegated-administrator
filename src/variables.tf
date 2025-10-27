@@ -12,8 +12,8 @@ variable "delegated_administrators" {
 
     Example:
       {
-        "123456789012" = ["config.amazonaws.com", "guardduty.amazonaws.com"]
-        "network"      = ["securitylake.amazonaws.com", "macie.amazonaws.com"]
+        "123456789012"  = ["config.amazonaws.com"]
+        "core-security" = ["securitylake.amazonaws.com", "macie.amazonaws.com", "guardduty.amazonaws.com"]
       }
 
     This variable allows defining multiple delegated admin configurations across accounts.
