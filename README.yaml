@@ -39,8 +39,23 @@ usage: |-
   ```
   Apply this configuration to the Organization root account, i.e., `core-gbl-root`.
 
-
-
+  To import the existing state of the delegated administrators, run the following snippet:
+  ```shell
+  aws organizations list-delegated-administrators --output json \
+    | jq -r '.DelegatedAdministrators[].Id' \
+    | while read -r account; do
+        aws organizations list-delegated-services-for-account \
+          --account-id "$account" \
+          --output json \
+        | jq -r --arg acc "$account" '.DelegatedServices[] | "\($acc)|\(.ServicePrincipal)"'
+      done \
+    | while IFS='|' read -r account principal; do
+        echo "Importing: ${account} | ${principal}"
+        terraform import \
+          "aws_organizations_delegated_administrator.this[\"${account}|${principal}\"]" \
+          "${account}/${principal}"
+      done
+  ```
 
 tags:
   - terraform

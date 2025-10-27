@@ -20,7 +20,7 @@ locals {
   # Build map for for_each: "<account_id>-<principal>" => { account_id, principal }
   delegations = {
     for item in local.delegation_items :
-    "${item.account}-${item.principal}" => {
+    "${item.account}|${item.principal}" => {
       account_id = lookup(local.resolved_account_ids, item.account)
       principal  = item.principal
     }
