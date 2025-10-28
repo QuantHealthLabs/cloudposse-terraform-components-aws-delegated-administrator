@@ -25,13 +25,12 @@ usage: |-
               - cloudtrail.amazonaws.com
               - config.amazonaws.com
               - config-multiaccountsetup.amazonaws.com
+              - securitylake.amazonaws.com
             core-security:
               - iam.amazonaws.com
               - account.amazonaws.com
               - guardduty.amazonaws.com
               - securityhub.amazonaws.com
-              - securityhub-multiaccountsetup.amazonaws.com
-              - securitylake.amazonaws.com
             infra-backup:
               - backup.amazonaws.com
             infra-monitor:
@@ -47,7 +46,7 @@ usage: |-
   aws_delegated_administrators_yaml="stacks/catalog/cloudposse/aws-delegated-administrator.yaml"
   delegated_administrators_var=$(yq < "$aws_delegated_administrators_yaml" -r '.components.terraform.cloudposse/aws-delegated-administrator.vars.delegated_administrators' -o json)
   for account_principal in $(yq < "$aws_delegated_administrators_yaml" -r \
-    '.components.terraform."cloudposse/aws-delegated-administrator".vars.delegated_administrators
+    '.components.terraform.cloudposse/aws-delegated-administrator.vars.delegated_administrators
       | to_entries[]
       | .key as $account
       | .value[]

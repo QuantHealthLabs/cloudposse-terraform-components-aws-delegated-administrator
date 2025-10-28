@@ -3,13 +3,13 @@ locals {
 
   # Resolve account name to ID using account_map, or keep key as-is if already an ID
   resolved_account_ids = {
-    for k, _ in var.delegated_administrators :
+    for k, _ in var.delegations :
       k => try(module.account_map.outputs.account_info_map[k].id, k)
   }
 
   # Flatten: [{account, principal}, ...] and dedupe principals per account
   delegation_items = flatten([
-    for account, principals in var.delegated_administrators : [
+    for account, principals in var.delegations : [
       for p in distinct(principals) : {
         account   = account
         principal = p

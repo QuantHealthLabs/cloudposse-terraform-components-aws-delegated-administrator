@@ -3,7 +3,7 @@ variable "region" {
   description = "AWS Region"
 }
 
-variable "delegated_administrators" {
+variable "delegations" {
   description = <<-EOT
     Map defining which AWS service principals should be delegated to which accounts.
 
