@@ -44,25 +44,22 @@ usage: |-
   To import the existing state of the delegated administrators, run the following snippet:
 
   ```shell
-  accounts_with_delegation=$(aws organizations list-delegated-administrators --output json | jq -r '.DelegatedAdministrators[].Id')
-  for account_id in $accounts_with_delegation; do
-    account_info=$(aws organizations list-delegated-administrators --output json | jq -r --arg account_id "$account_id" '.DelegatedAdministrators[] | select(.Id == $account_id)')
-    for principal in $(aws organizations list-delegated-services-for-account --account-id "$account_id" --output json | jq -r '.DelegatedServices[].ServicePrincipal'); do
-      state=$(echo "$account_info" \
-        | jq -r \
-          --arg account_id "$account_id" \
-          --arg principal "$principal" \
-          '
-            with_entries(.key |= ascii_downcase) |
-            .id = .id + "/" + $principal |
-            .account_id = $account_id |
-            .service_principal = $principal
-          '
-        )
-      echo "Importing: ${account_id} | ${principal}"
-      atmos terraform import cloudposse/aws-delegated-administrator -s core-gbl-root \
-        'aws_organizations_delegated_administrator.this["'"$account_id"'|'"$principal"'"]' '''$state'''
-    done
+  aws_delegated_administrators_yaml="stacks/catalog/cloudposse/aws-delegated-administrator.yaml"
+  delegated_administrators_var=$(yq < "$aws_delegated_administrators_yaml" -r '.components.terraform.cloudposse/aws-delegated-administrator.vars.delegated_administrators' -o json)
+  for account_principal in $(yq < "$aws_delegated_administrators_yaml" -r \
+    '.components.terraform."cloudposse/aws-delegated-administrator".vars.delegated_administrators
+      | to_entries[]
+      | .key as $account
+      | .value[]
+      | "\($account)|\(.)"'
+  ); do
+    account_name=$(echo "$account_principal" | awk -F '|' '{print $1}')
+    principal=$(echo "$account_principal" | awk -F '|' '{print $2}')
+    account_id=$(aws organizations list-accounts | jq -r --arg account_name "$account_name" '.Accounts[] | select(.Name == $account_name) | .Id')
+    [[ -z "$account_id" ]] && account_id="$account_name"
+
+    atmos terraform import cloudposse/aws-delegated-administrator -s core-gbl-root -var delegated_administrators="$delegated_administrators_var" \
+      'aws_organizations_delegated_administrator.this["'"$account_name"'|'"$principal"'"]' "$account_id/$principal"
   done
   ```
 
