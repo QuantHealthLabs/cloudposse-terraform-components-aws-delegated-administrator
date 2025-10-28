@@ -39,23 +39,34 @@ usage: |-
   ```
   Apply this configuration to the Organization root account, i.e., `core-gbl-root`.
 
+  ---
+
   To import the existing state of the delegated administrators, run the following snippet:
+
   ```shell
-  aws organizations list-delegated-administrators --output json \
-    | jq -r '.DelegatedAdministrators[].Id' \
-    | while read -r account; do
-        aws organizations list-delegated-services-for-account \
-          --account-id "$account" \
-          --output json \
-        | jq -r --arg acc "$account" '.DelegatedServices[] | "\($acc)|\(.ServicePrincipal)"'
-      done \
-    | while IFS='|' read -r account principal; do
-        echo "Importing: ${account} | ${principal}"
-        terraform import \
-          "aws_organizations_delegated_administrator.this[\"${account}|${principal}\"]" \
-          "${account}/${principal}"
-      done
+  accounts_with_delegation=$(aws organizations list-delegated-administrators --output json | jq -r '.DelegatedAdministrators[].Id')
+  for account_id in $accounts_with_delegation; do
+    account_info=$(aws organizations list-delegated-administrators --output json | jq -r --arg account_id "$account_id" '.DelegatedAdministrators[] | select(.Id == $account_id)')
+    for principal in $(aws organizations list-delegated-services-for-account --account-id "$account_id" --output json | jq -r '.DelegatedServices[].ServicePrincipal'); do
+      state=$(echo "$account_info" \
+        | jq -r \
+          --arg account_id "$account_id" \
+          --arg principal "$principal" \
+          '
+            with_entries(.key |= ascii_downcase) |
+            .id = .id + "/" + $principal |
+            .account_id = $account_id |
+            .service_principal = $principal
+          '
+        )
+      echo "Importing: ${account_id} | ${principal}"
+      atmos terraform import cloudposse/aws-delegated-administrator -s core-gbl-root \
+        'aws_organizations_delegated_administrator.this["'"$account_id"'|'"$principal"'"]' '''$state'''
+    done
+  done
   ```
+
+  After which running `atmos terraform plan` should show no changes.
 
 tags:
   - terraform
